@@ -5,13 +5,13 @@
 #include <time.h>
 
 typedef struct myNode {
-	char *name;
-	time_t modifiedAt;
+    char *name;
+    time_t modifiedAt;
 } myNode;
 
 typedef struct myList {
-	myNode *node;
-	struct myList *next;
+    myNode *node;
+    struct myList *next;
 } myList;
 
 void addToList(myList *root, myNode *node);
