@@ -11,64 +11,58 @@
 #include <utime.h>
 #include <time.h>
 
-#include "directoryFunctions.h"
+#include "myFileApi.h"
 #include "myList.h"
 #include "logger.h"
+#include "myUtils.h"
 
-char* concat(const char *s1, const char *s2) {
-    char *result = malloc(strlen(s1)+strlen(s2)+1);
-    strcpy(result, s1);
-    strcat(result, s2);
-    return result;
-}
-
-myList* listFilesInDirectory(char* dirPath) {
-    DIR* dir = opendir(dirPath);
+myList* listFilesInDirectory(char* path) {
+    DIR* dir = opendir(path);
+    if (dir == NULL) return NULL;
 
     myList* list = createList();
     struct dirent* entry;
     int isEmpty = 1;
     while ((entry = readdir(dir)) != NULL) {
-        char* fullPath = concat(dirPath, entry->d_name);
+        char* absolutePath = concat(path, entry->d_name);
         struct stat fileInfo;
-        lstat(fullPath, &fileInfo);
-        // free(fullPath);
+        int result = lstat(absolutePath, &fileInfo);
+        // free(absolutePath);
 
-        if (S_ISREG(fileInfo.st_mode)) {
+        if (result == 0 && S_ISREG(fileInfo.st_mode)) {
             myNode* node = createNode(entry->d_name, fileInfo.st_mtim.tv_sec);
             addToList(list, node);
             isEmpty = 0;
         }
     }
 
-    if (isEmpty == 1) return NULL;
+    if (isEmpty) return NULL;
     return list;
 }
 
-void deleteAllFiles(char* dirPath) {
-    DIR* dir = opendir(dirPath);
+void deleteAllFiles(char* path) {
+    DIR* dir = opendir(path);
+    if (dir == NULL) return;
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
-        deleteFile(dirPath, entry->d_name);
+        deleteFile(path, entry->d_name);
     }
 }
 
 void deleteFile(char* path, char* name) {
-    char* fullPath = concat(path, name);
+    char* absolutePath = concat(path, name);
     struct stat fileInfo;
-    lstat(fullPath, &fileInfo);
+    int result = lstat(absolutePath, &fileInfo);
 
-    if (S_ISREG(fileInfo.st_mode)) {
-        int result = unlink(fullPath);
+    if (result == 0 && S_ISREG(fileInfo.st_mode)) {
+        result = unlink(absolutePath);
         char* message;
 
-        if (result == 0) {
-            asprintf(&message, "%s has been deleted", fullPath);
-        }
-        else {
-            asprintf(&message, "%s %s", fullPath, strerror(errno));
-        }
+        if (result == 0)
+            asprintf(&message, "%s has been deleted", absolutePath);
+        else
+            asprintf(&message, "%s %s", absolutePath, strerror(errno));
         
         logState(message);
         free(message);
@@ -77,6 +71,7 @@ void deleteFile(char* path, char* name) {
 
 void copyAllFiles(char* source, char* dest) {
     DIR* dir = opendir(source);
+    if (dir == NULL) return;
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
@@ -85,29 +80,29 @@ void copyAllFiles(char* source, char* dest) {
 }
 
 void copyFile(char* sourcePath, char* name, char* destPath) {
-    char* fullPath = concat(sourcePath, name);
+    char* absolutePath = concat(sourcePath, name);
 
     unsigned char buffer[16];
     size_t bytesRead;
     struct stat fileInfo;
-    lstat(fullPath, &fileInfo);
+    int result = lstat(absolutePath, &fileInfo);
 
-    if (S_ISREG(fileInfo.st_mode)) {
+    if (result == 0 && S_ISREG(fileInfo.st_mode)) {
         size_t len = fileInfo.st_size;
-        int input = open(fullPath, O_RDONLY);
+        int input = open(absolutePath, O_RDONLY);
 
         char* message;
         if (input == -1) {
-            asprintf(&message, "%s %s", fullPath, strerror(errno));
+            asprintf(&message, "%s %s", absolutePath, strerror(errno));
             logState(message);
             free(message);
             return;
         }
 
-        char* outputFullPath = concat(destPath, name);
-        int output = open(outputFullPath, O_WRONLY | O_CREAT, 0666);
+        char* outputAbsolutePath = concat(destPath, name);
+        int output = open(outputAbsolutePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
         if (output == -1) {
-            asprintf(&message, "%s %s", outputFullPath, strerror(errno));
+            asprintf(&message, "%s %s", outputAbsolutePath, strerror(errno));
             logState(message);
             free(message);
             return;
@@ -119,16 +114,10 @@ void copyFile(char* sourcePath, char* name, char* destPath) {
         }
         while (bytesRead == sizeof(buffer));
 
-        asprintf(&message, "%s has been copied to %s", fullPath, destPath);
+        asprintf(&message, "%s has been copied to %s", absolutePath, destPath);
         logState(message);
         free(message);
 
-        /*struct utimbuf* times;
-        time_t x = fileInfo.st_mtim.tv_sec;
-        times->actime = x;
-        times->modtime = x;
-
-        utime(outputFullPath, times);*/
         close(input);
         close(output);
     }

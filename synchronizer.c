@@ -2,7 +2,9 @@
 #include <time.h>
 #include "synchronizer.h"
 #include "myList.h"
-#include "directoryFunctions.h"
+#include "myFileApi.h"
+#include "myDirectoryApi.h"
+#include "myUtils.h"
 
 void myPrint(myList* root) {
     if (root == NULL) return;
@@ -10,37 +12,72 @@ void myPrint(myList* root) {
     myPrint(root->next);
 }
 
-int synchronize(char* sourceDir, char* destDir) {
-    myList* sourceFiles = listFilesInDirectory(sourceDir);
-    myList* destFiles = listFilesInDirectory(destDir);
+int synchronizeFiles(char* sourcePath, char* destPath) {
+    myList* sourceFiles = listFilesInDirectory(sourcePath);
+    myList* destFiles = listFilesInDirectory(destPath);
 
     if (sourceFiles == NULL) {
-        deleteAllFiles(destDir);
+        deleteAllFiles(destPath);
         return 0;
     }
 
     if (destFiles == NULL) {
-        copyAllFiles(sourceDir, destDir);
+        copyAllFiles(sourcePath, destPath);
         return 0;
     }
 
-    do {
+    while (sourceFiles != NULL) {
         myNode* node1 = sourceFiles->node;
         myNode* node2 = getNodeByName(destFiles, node1->name);
         if (node2 == NULL || difftime(node1->modifiedAt, node2->modifiedAt) > 0) {
-            copyFile(sourceDir, node1->name, destDir);
+            copyFile(sourcePath, node1->name, destPath);
         }
 
         deleteNode(&sourceFiles, node1);
         deleteNode(&destFiles, node2);
     }
-    while (sourceFiles != NULL);
-
-    if (destFiles != NULL) {
-        do {
-            deleteFile(destDir, destFiles->node->name);
-            deleteNode(&destFiles, destFiles->node);
-        }
-        while (destFiles != NULL);
+    
+    while (destFiles != NULL) {
+        deleteFile(destPath, destFiles->node->name);
+        deleteNode(&destFiles, destFiles->node);
     }
+    
+    return 0;
+}
+
+int synchronizeDirectories(char* sourcePath, char* destPath) {
+    myList* sourceDirs = listDirsInDirectory(sourcePath);
+    myList* destDirs = listDirsInDirectory(destPath);
+
+    if (sourceDirs == NULL) {
+        deleteAllDirs(destPath);
+        return 0;
+    }
+
+    while (sourceDirs != NULL) {
+        myNode* node1 = sourceDirs->node;
+        myNode* node2 = getNodeByName(destDirs, node1->name);
+
+        char* dirName = appendSlash(node1->name);
+        int result = createDirIfNotExists(destPath, dirName);
+
+        if (result == 0) {
+            char* newSourcePath = concat(sourcePath, dirName);
+            char* newDestPath = concat(destPath, dirName);
+            synchronizeAll(newSourcePath, newDestPath);
+        }
+        
+        deleteNode(&sourceDirs, node1);
+        deleteNode(&destDirs, node2);
+    }
+
+    while (destDirs != NULL) {
+        deleteDir(concat(destPath, appendSlash(destDirs->node->name)));
+        deleteNode(&destDirs, destDirs->node);
+    }
+}
+
+void synchronizeAll(char* sourcePath, char* destPath) {
+    synchronizeFiles(sourcePath, destPath);
+    synchronizeDirectories(sourcePath, destPath);
 }

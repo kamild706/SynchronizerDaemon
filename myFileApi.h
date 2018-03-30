@@ -1,5 +1,5 @@
-#ifndef directoryFunctions_h_
-#define directoryFunctions_h_
+#ifndef MY_FILE_API_H_
+#define MY_FILE_API_H_
 
 #include "myList.h"
 

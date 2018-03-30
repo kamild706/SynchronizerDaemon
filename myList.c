@@ -5,6 +5,7 @@
 void addToList(myList* root, myNode* node) {
     if (root->node == NULL) {
         root->node = node;
+        root->next = NULL;
     }
     else {
         while (root->next != NULL) {
@@ -12,11 +13,14 @@ void addToList(myList* root, myNode* node) {
         }
         root->next = malloc(sizeof(myList));
         root->next->node = node;
+        root->next->next = NULL;
     }
 }
 
 myList* createList() {
     myList* list = malloc(sizeof(myList));
+    list->node = NULL;
+    list->next = NULL;
     return list;
 }
 
@@ -51,6 +55,8 @@ myNode* createNode(char* name, time_t modifiedAt) {
 }*/
 
 void deleteNode(myList** root, myNode* node) {
+    if (node == NULL) return;
+
     myList* temp = *root, *prev;
     if (temp != NULL && temp->node == node) {
         *root = temp->next;

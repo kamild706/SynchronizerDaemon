@@ -1,6 +1,7 @@
 #ifndef SYNCHRONIZER_H_
 #define SYNCHRONIZER_H_
 
-int synchronize(char *source, char *dest);
+void synchronizeAll(char *source, char *dest);
+int synchronizeFiles(char* sourceDir, char* destDir);
 
 #endif
