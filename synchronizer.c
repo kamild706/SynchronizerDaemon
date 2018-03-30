@@ -39,7 +39,8 @@ int synchronize(char* sourceDir, char* destDir) {
     if (destFiles != NULL) {
         do {
             deleteFile(destDir, destFiles->node->name);
-            destFiles = destFiles->next;
+            deleteNode(&destFiles, destFiles->node);
         }
         while (destFiles != NULL);
     }
+}
