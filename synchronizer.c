@@ -6,6 +6,7 @@
 #include "myDirectoryApi.h"
 #include "myUtils.h"
 #include "config.h"
+#include "logger.h"
 
 void myPrint(myList* root) {
     if (root == NULL) return;
@@ -93,8 +94,12 @@ void synchronizeAll(char* sourcePath, char* destPath) {
 }
 
 void synchronize(char* sourcePath, char* destPath) {
+    logState("Synchronization started");
+
     if (synchronizeRecursively == 1)
         synchronizeAll(sourcePath, destPath);
     else
         synchronizeFiles(sourcePath, destPath);
+
+    logState("Synchronization finished");
 }

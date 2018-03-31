@@ -9,7 +9,7 @@ $(objects): myList.h
 main.o: synchronizer.h myUtils.h logger.h config.h
 myDirectoryApi.o: myDirectoryApi.h logger.h myUtils.h
 myFileApi.o: myFileApi.h logger.h myUtils.h
-synchronizer.o: synchronizer.h myFileApi.h myDirectoryApi.h config.h
+synchronizer.o: synchronizer.h myFileApi.h myDirectoryApi.h config.h logger.h
 logger.o: logger.h
 myUtils.o: myUtils.h
 config.o: config.h
