@@ -8,21 +8,27 @@
 
 void myPrint(myList* root) {
     if (root == NULL) return;
-    printf("%s\n", root->node->name);
+    printf("address%p: %s, %d\n", root->node, root->node->name, root->node->modifiedAt);
     myPrint(root->next);
 }
 
 int synchronizeFiles(char* sourcePath, char* destPath) {
-    myList* sourceFiles = listFilesInDirectory(sourcePath);
     myList* destFiles = listFilesInDirectory(destPath);
-
+    myList* sourceFiles = listFilesInDirectory(sourcePath);
+   
     if (sourceFiles == NULL) {
         deleteAllFiles(destPath);
+
+        destroyList(sourceFiles);
+        destroyList(destFiles);
         return 0;
     }
 
     if (destFiles == NULL) {
         copyAllFiles(sourcePath, destPath);
+        
+        destroyList(sourceFiles);
+        destroyList(destFiles);
         return 0;
     }
 
@@ -51,6 +57,9 @@ int synchronizeDirectories(char* sourcePath, char* destPath) {
 
     if (sourceDirs == NULL) {
         deleteAllDirs(destPath);
+        
+        destroyList(sourceDirs);
+        destroyList(destDirs);
         return 0;
     }
 

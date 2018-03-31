@@ -27,14 +27,15 @@ myList* listFilesInDirectory(char* path) {
         char* absolutePath = concat(path, entry->d_name);
         struct stat fileInfo;
         int result = lstat(absolutePath, &fileInfo);
-        // free(absolutePath);
+        free(absolutePath);
 
         if (result == 0 && S_ISREG(fileInfo.st_mode)) {
-            myNode* node = createNode(entry->d_name, fileInfo.st_mtim.tv_sec);
+            myNode* node = createNode(strdup(entry->d_name), fileInfo.st_mtim.tv_sec);
             addToList(list, node);
             isEmpty = 0;
         }
     }
+    closedir(dir);
 
     if (isEmpty) return NULL;
     return list;
@@ -48,6 +49,7 @@ void deleteAllFiles(char* path) {
     while ((entry = readdir(dir)) != NULL) {
         deleteFile(path, entry->d_name);
     }
+    closedir(dir);
 }
 
 void deleteFile(char* path, char* name) {
@@ -67,6 +69,7 @@ void deleteFile(char* path, char* name) {
         logState(message);
         free(message);
     }
+    free(absolutePath);
 }
 
 void copyAllFiles(char* source, char* dest) {
@@ -77,6 +80,7 @@ void copyAllFiles(char* source, char* dest) {
     while ((entry = readdir(dir)) != NULL) {
         copyFile(source, entry->d_name, dest);
     }
+    closedir(dir);
 }
 
 void copyFile(char* sourcePath, char* name, char* destPath) {
@@ -105,8 +109,10 @@ void copyFile(char* sourcePath, char* name, char* destPath) {
             asprintf(&message, "%s %s", outputAbsolutePath, strerror(errno));
             logState(message);
             free(message);
+            free(outputAbsolutePath);
             return;
         }
+        free(outputAbsolutePath);
 
         do {
             bytesRead = read(input, buffer, sizeof(buffer));
@@ -117,6 +123,7 @@ void copyFile(char* sourcePath, char* name, char* destPath) {
         asprintf(&message, "%s has been copied to %s", absolutePath, destPath);
         logState(message);
         free(message);
+        free(absolutePath);
 
         close(input);
         close(output);

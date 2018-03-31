@@ -32,14 +32,15 @@ myList* listDirsInDirectory(char* dirPath) {
         char* absolutePath = concat(dirPath, entry->d_name);
         struct stat dirInfo;
         int result = lstat(absolutePath, &dirInfo);
-        // free(absolutePath);
+        free(absolutePath);
 
         if (result == 0 && S_ISDIR(dirInfo.st_mode)) {
-            myNode* node = createNode(entry->d_name, dirInfo.st_mtim.tv_sec);
+            myNode* node = createNode(strdup(entry->d_name), dirInfo.st_mtim.tv_sec);
             addToList(list, node);
             isEmpty = 0;
         }
     }
+    closedir(dir);
 
     if (isEmpty == 1) return NULL;
     return list;
@@ -60,17 +61,23 @@ int createDirIfNotExists(char* path, char* dirName) {
         if (result == 0) {
             asprintf(&message, "%s has been created", absolutePath);
             logState(message);
+            free(message);
+            free(absolutePath);
             return 0;
         }
         else {
             asprintf(&message, "%s couldn't been created, %s", absolutePath, strerror(errno));
             logState(message);
+            free(message);
+            free(absolutePath);
             return -1;
         }
     }
     else {
         asprintf(&message, "%s couldn't been created, %s", absolutePath, strerror(errno));
         logState(message);
+        free(message);
+        free(absolutePath);
         return -1;
     }
 }
@@ -92,7 +99,9 @@ void deleteAllDirs(char* path) {
         if (result == 0 && S_ISDIR(entryInfo.st_mode)) {
             deleteDir(appendSlash(absolutePath));
         }
+        free(absolutePath);
     }
+    closedir(dir);
 }
 
 void deleteDir(char* path) {
@@ -114,7 +123,9 @@ void deleteDir(char* path) {
         else if (result == 0 && S_ISREG(entryInfo.st_mode)) {
             deleteFile(path, entry->d_name);
         }
+        free(absolutePath);
     }
+    closedir(dir);
 
     int result = rmdir(path);
 

@@ -19,5 +19,6 @@ myList* createList();
 myNode* createNode(char *name, time_t modifiedAt);
 void deleteNode(myList **root, myNode *node);
 myNode* getNodeByName(myList* root, char* name);
+void destroyList(myList* root);
 
 #endif

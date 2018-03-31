@@ -77,13 +77,22 @@ void deleteNode(myList** root, myNode* node) {
 myNode* getNodeByName(myList* root, char* name) {
     if (root == NULL) return NULL;
 
-    do {
+    while (root != NULL) {
         if (strcmp(root->node->name, name) == 0) {
             return root->node;
         }
         root = root->next;
     }
-    while (root != NULL);
 
     return NULL;
+}
+
+void destroyList(myList* root) {
+    myList* tmp = root;
+    while (root != NULL) {
+        free(root->node);
+        tmp = root->next;
+        free(root);
+        root = tmp;
+    }
 }
