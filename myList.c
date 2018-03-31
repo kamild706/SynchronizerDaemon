@@ -6,15 +6,15 @@ void addToList(myList* root, myNode* node) {
     if (root->node == NULL) {
         root->node = node;
         root->next = NULL;
+        return;
     }
-    else {
-        while (root->next != NULL) {
-            root = root->next;
-        }
-        root->next = malloc(sizeof(myList));
-        root->next->node = node;
-        root->next->next = NULL;
+
+    while (root->next != NULL) {
+        root = root->next;
     }
+    root->next = malloc(sizeof(myList));
+    root->next->node = node;
+    root->next->next = NULL;  
 }
 
 myList* createList() {

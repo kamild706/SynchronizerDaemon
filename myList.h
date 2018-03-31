@@ -1,5 +1,5 @@
-#ifndef myList_h_
-#define myList_h_
+#ifndef MY_LIST_H_
+#define MY_LIST_H_
 
 #include <stdlib.h>
 #include <time.h>

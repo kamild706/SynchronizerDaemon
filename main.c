@@ -6,17 +6,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <getopt.h>
-#include "myList.h"
 #include "synchronizer.h"
 #include "myUtils.h"
 #include "logger.h"
+#include "config.h"
 
 int main(int argc, char **argv) {
     int option_index = 0;
     char *sourcePath = NULL;
     char *destPath = NULL;
     int copyRecursively = 0;
-    int fileSizeThreshold = 0;
+    int thresholdValue = 0;
 
     while ((option_index = getopt(argc, argv, "s:d:Rt:")) != -1) {
         switch (option_index) {
@@ -30,7 +30,8 @@ int main(int argc, char **argv) {
                 copyRecursively = 1;
                 break;
             case 't':
-                fileSizeThreshold = atoi(optarg);
+                thresholdValue = atoi(optarg);
+                break;
         }
     }
 
@@ -59,11 +60,13 @@ int main(int argc, char **argv) {
     if (!endsWithSlash(destPath))
         destPath = appendSlash(destPath);
     
-    logState("Synchronization started");
+    if (thresholdValue > 0)
+        fileSizeThreshold = thresholdValue;
     if (copyRecursively == 1)
-        synchronizeAll(sourcePath, destPath);
-    else
-        synchronizeFiles(sourcePath, destPath);
+        synchronizeRecursively = 1;
+
+    logState("Synchronization started");
+    synchronize(sourcePath, destPath);
     logState("Synchronization finished");
 
     return 0;

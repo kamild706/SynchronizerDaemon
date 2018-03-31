@@ -10,11 +10,13 @@
 #include <errno.h>
 #include <utime.h>
 #include <time.h>
+#include <sys/mman.h>
 
 #include "myFileApi.h"
 #include "myList.h"
 #include "logger.h"
 #include "myUtils.h"
+#include "config.h"
 
 myList* listFilesInDirectory(char* path) {
     DIR* dir = opendir(path);
@@ -85,47 +87,110 @@ void copyAllFiles(char* source, char* dest) {
 
 void copyFile(char* sourcePath, char* name, char* destPath) {
     char* absolutePath = concat(sourcePath, name);
+    struct stat st;
+
+    int result = lstat(absolutePath, &st);
+    if (result == 0 && S_ISREG(st.st_mode)) {
+        size_t fileSize = st.st_size;
+
+        if (fileSize > fileSizeThreshold)
+            copyFileByMMapping(sourcePath, name, destPath, fileSize);
+        else
+            copyFileInStandardWay(sourcePath, name, destPath);
+    }
+}
+
+void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fileSize) {
+    char* inputPath = concat(sourcePath, name);
+    char* message;
+    int input = open(inputPath, O_RDONLY);
+    if (input == -1) {
+        asprintf(&message, "%s %s", inputPath, strerror(errno));
+        logState(message);
+
+        free(message);
+        free(inputPath);
+        return;
+    }
+
+    char* outputPath = concat(destPath, name);
+    int output = open(outputPath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (output == -1) {
+        asprintf(&message, "%s %s", outputPath, strerror(errno));
+        logState(message);
+
+        free(message);
+        free(inputPath);
+        free(outputPath);
+        return;
+    }
+
+    char* mmappedData = mmap(NULL, fileSize, PROT_READ, MAP_PRIVATE | MAP_POPULATE, input, 0);
+    if (mmappedData == MAP_FAILED) {
+        asprintf(&message, "%s %s", inputPath, strerror(errno));
+        logState(message);
+
+        free(message);
+        free(inputPath);
+        free(outputPath);
+        return;
+    }
+    write(output, mmappedData, fileSize);
+
+    asprintf(&message, "%s has been copied (mmapped) to %s", inputPath, destPath);
+    logState(message);
+
+    free(message);
+    free(inputPath);
+    free(outputPath);
+
+    close(input);
+    close(output);
+
+    munmap(mmappedData, fileSize);
+}
+
+void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
+    char* message;
+
+    char* absolutePath = concat(sourcePath, name);
+    int input = open(absolutePath, O_RDONLY);
+    if (input == -1) {
+        asprintf(&message, "%s %s", absolutePath, strerror(errno));
+        logState(message);
+
+        free(message);
+        free(absolutePath);
+        return;
+    }
+
+    char* outputAbsolutePath = concat(destPath, name);
+    int output = open(outputAbsolutePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (output == -1) {
+        asprintf(&message, "%s %s", outputAbsolutePath, strerror(errno));
+        logState(message);
+
+        free(message);
+        free(absolutePath);
+        free(outputAbsolutePath);
+        return;
+    }
 
     unsigned char buffer[16];
     size_t bytesRead;
-    struct stat fileInfo;
-    int result = lstat(absolutePath, &fileInfo);
-
-    if (result == 0 && S_ISREG(fileInfo.st_mode)) {
-        size_t len = fileInfo.st_size;
-        int input = open(absolutePath, O_RDONLY);
-
-        char* message;
-        if (input == -1) {
-            asprintf(&message, "%s %s", absolutePath, strerror(errno));
-            logState(message);
-            free(message);
-            return;
-        }
-
-        char* outputAbsolutePath = concat(destPath, name);
-        int output = open(outputAbsolutePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-        if (output == -1) {
-            asprintf(&message, "%s %s", outputAbsolutePath, strerror(errno));
-            logState(message);
-            free(message);
-            free(outputAbsolutePath);
-            return;
-        }
-        free(outputAbsolutePath);
-
-        do {
-            bytesRead = read(input, buffer, sizeof(buffer));
-            write(output, buffer, bytesRead);
-        }
-        while (bytesRead == sizeof(buffer));
-
-        asprintf(&message, "%s has been copied to %s", absolutePath, destPath);
-        logState(message);
-        free(message);
-        free(absolutePath);
-
-        close(input);
-        close(output);
+    do {
+        bytesRead = read(input, buffer, sizeof(buffer));
+        write(output, buffer, bytesRead);
     }
+    while (bytesRead == sizeof(buffer));
+
+    close(input);
+    close(output);
+
+    asprintf(&message, "%s has been copied to %s", absolutePath, destPath);
+    logState(message);
+    
+    free(message);
+    free(absolutePath);
+    free(outputAbsolutePath);
 }
