@@ -8,6 +8,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <signal.h>
+#include <time.h>
 
 #include "synchronizer.h"
 #include "myUtils.h"
@@ -17,6 +18,11 @@
 char *sourcePath = NULL;
 char *destPath = NULL;
 int sleepTime = 5 * 60;
+
+void handler(int signum) {
+    logState("Synchronization invoked by signal");
+    synchronize(sourcePath, destPath);
+}
 
 int runDaemon() {
     pid_t pid, sid;
@@ -41,15 +47,24 @@ int runDaemon() {
         exit(EXIT_FAILURE);
     }
 
+    printf("PID %d\n", sid);
+
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
 
+    struct timespec req, rem;
     while (1) {
         logState("Daemon awoken");
         synchronize(sourcePath, destPath);
         logState("Daemon falls asleep");
-        sleep(sleepTime);
+        
+        req.tv_sec = sleepTime;
+        req.tv_nsec = 0L;
+        while (nanosleep(&req, &rem) == -1) {
+            req.tv_sec = rem.tv_sec;
+            req.tv_nsec = rem.tv_nsec;
+        }
     }
 }
 
@@ -110,6 +125,7 @@ int main(int argc, char **argv) {
     if (pauseTime > 0)
         sleepTime = pauseTime;
 
+    signal(SIGUSR1, handler);
     runDaemon();
 
     return 0;
