@@ -32,34 +32,13 @@ myNode* createNode(char* name, time_t modifiedAt) {
     return node;
 }
 
-/*void deleteNode(myList** root, myNode* node) {
-    if (node == NULL) return;
-
-    if ((*root)->node == node) {
-        myList* next = (*root)->next;
-        free(node);
-        free(*root);
-        *root = next;
-    }
-    else {
-        myList* prev;
-        while ((*root)->next != NULL) {
-            prev = *root;
-            *root = (*root)->next;
-            if ((*root)->node == node) {
-                free(node);
-                prev->next = (*root)->next; 
-            }
-        }
-    }
-}*/
-
 void deleteNode(myList** root, myNode* node) {
     if (node == NULL) return;
 
     myList* temp = *root, *prev;
     if (temp != NULL && temp->node == node) {
         *root = temp->next;
+        free(node);
         free(temp);
         return;
     }
@@ -71,6 +50,7 @@ void deleteNode(myList** root, myNode* node) {
 
     if (temp == NULL) return;
     prev->next = temp->next;
+    free(node);
     free(temp);
 }
 
