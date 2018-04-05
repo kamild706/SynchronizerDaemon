@@ -8,12 +8,6 @@
 #include "config.h"
 #include "logger.h"
 
-void myPrint(myList* root) {
-    if (root == NULL) return;
-    printf("address%p: %s, %d\n", root->node, root->node->name, root->node->modifiedAt);
-    myPrint(root->next);
-}
-
 int synchronizeFiles(char* sourcePath, char* destPath) {
     myList* destFiles = listFilesInDirectory(destPath);
     myList* sourceFiles = listFilesInDirectory(sourcePath);
