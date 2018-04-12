@@ -8,6 +8,8 @@
 #include "config.h"
 #include "logger.h"
 
+static int isSynchronizationInProgress = 0;
+
 int synchronizeFiles(char* sourcePath, char* destPath) {
     myList* destFiles = listFilesInDirectory(destPath);
     myList* sourceFiles = listFilesInDirectory(sourcePath);
@@ -88,6 +90,12 @@ void synchronizeAll(char* sourcePath, char* destPath) {
 }
 
 void synchronize(char* sourcePath, char* destPath) {
+    if (isSynchronizationInProgress) {
+        logState("Other synchronization is currently in progress; exiting");
+        return;
+    }
+
+    isSynchronizationInProgress = 1;
     logState("Synchronization started");
 
     if (synchronizeRecursively == 1)
@@ -96,4 +104,5 @@ void synchronize(char* sourcePath, char* destPath) {
         synchronizeFiles(sourcePath, destPath);
 
     logState("Synchronization finished");
+    isSynchronizationInProgress = 0;
 }
