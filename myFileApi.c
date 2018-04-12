@@ -114,7 +114,7 @@ void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fil
     }
 
     char* outputPath = concat(destPath, name);
-    int output = open(outputPath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    int output = open(outputPath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (output == -1) {
         asprintf(&message, "%s %s", outputPath, strerror(errno));
         logState(message);
@@ -170,7 +170,7 @@ void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
     }
 
     char* outputAbsolutePath = concat(destPath, name);
-    int output = open(outputAbsolutePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    int output = open(outputAbsolutePath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (output == -1) {
         asprintf(&message, "%s couldn't been updated, %s", outputAbsolutePath, strerror(errno));
         logState(message);

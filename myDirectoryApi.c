@@ -57,7 +57,7 @@ int createDirIfNotExists(char* path, char* dirName) {
 
     char* message;
     if (errno == ENOENT) {
-        int result = mkdir(absolutePath, ACCESSPERMS);
+        int result = mkdir(absolutePath, 0744);
         if (result == 0) {
             asprintf(&message, "%s has been created", absolutePath);
             logState(message);
