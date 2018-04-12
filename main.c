@@ -71,7 +71,7 @@ int runDaemon() {
 int main(int argc, char **argv) {
     int option_index = 0;
     int copyRecursively = 0;
-    int thresholdValue = 0;
+    long thresholdValue = 0;
     int pauseTime = 0;
 
     while ((option_index = getopt(argc, argv, "s:d:Rt:p:")) != -1) {
