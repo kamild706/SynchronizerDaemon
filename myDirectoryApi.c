@@ -133,7 +133,7 @@ void deleteDir(char* path) {
     if (result == 0)
         asprintf(&message, "%s has been deleted", path);
     else
-        asprintf(&message, "%s %s", path, strerror(errno));
+        asprintf(&message, "%s couldn't been deleted, %s", path, strerror(errno));
     
     logState(message);
     free(message);

@@ -66,7 +66,7 @@ void deleteFile(char* path, char* name) {
         if (result == 0)
             asprintf(&message, "%s has been deleted", absolutePath);
         else
-            asprintf(&message, "%s %s", absolutePath, strerror(errno));
+            asprintf(&message, "%s couldn't been deleted, %s", absolutePath, strerror(errno));
         
         logState(message);
         free(message);
@@ -135,9 +135,14 @@ void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fil
         free(outputPath);
         return;
     }
-    write(output, mmappedData, fileSize);
+    int result = write(output, mmappedData, fileSize);
 
-    asprintf(&message, "%s has been copied (mmapped) to %s", inputPath, destPath);
+    if (result == -1) {
+        asprintf(&message, "%s couldn't been copied (mmapped) to %s, %s", inputPath, destPath, strerror(errno));
+    } else {
+        asprintf(&message, "%s has been copied (mmapped) to %s", inputPath, destPath);
+    }
+
     logState(message);
 
     free(message);
@@ -156,7 +161,7 @@ void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
     char* absolutePath = concat(sourcePath, name);
     int input = open(absolutePath, O_RDONLY);
     if (input == -1) {
-        asprintf(&message, "%s %s", absolutePath, strerror(errno));
+        asprintf(&message, "%s couldn't been copied, %s", absolutePath, strerror(errno));
         logState(message);
 
         free(message);
@@ -167,7 +172,7 @@ void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
     char* outputAbsolutePath = concat(destPath, name);
     int output = open(outputAbsolutePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (output == -1) {
-        asprintf(&message, "%s %s", outputAbsolutePath, strerror(errno));
+        asprintf(&message, "%s couldn't been updated, %s", outputAbsolutePath, strerror(errno));
         logState(message);
 
         free(message);
@@ -178,16 +183,22 @@ void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
 
     unsigned char buffer[16];
     size_t bytesRead;
+    int result = -1;
     do {
         bytesRead = read(input, buffer, sizeof(buffer));
-        write(output, buffer, bytesRead);
+        result = write(output, buffer, bytesRead);
     }
     while (bytesRead == sizeof(buffer));
 
     close(input);
     close(output);
 
-    asprintf(&message, "%s has been copied to %s", absolutePath, destPath);
+    if (result == -1) {
+        asprintf(&message, "%s couldn't been copied to %s, %s", absolutePath, destPath, strerror(errno));
+    } else {
+        asprintf(&message, "%s has been copied to %s", absolutePath, destPath);
+    }
+
     logState(message);
     
     free(message);
