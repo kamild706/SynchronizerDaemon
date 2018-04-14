@@ -45,7 +45,13 @@ myList* listFilesInDirectory(char* path) {
 
 void deleteAllFiles(char* path) {
     DIR* dir = opendir(path);
-    if (dir == NULL) return;
+    if (dir == NULL) {
+        char* message;
+        asprintf(&message, "Files from %s couldn't been deleted, %s", path, strerror(errno));
+        logState(message);
+        free(message);
+        return;
+    }
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
@@ -56,27 +62,36 @@ void deleteAllFiles(char* path) {
 
 void deleteFile(char* path, char* name) {
     char* absolutePath = concat(path, name);
+    char* message;
     struct stat fileInfo;
     int result = lstat(absolutePath, &fileInfo);
 
     if (result == 0 && S_ISREG(fileInfo.st_mode)) {
         result = unlink(absolutePath);
-        char* message;
 
         if (result == 0)
             asprintf(&message, "%s has been deleted", absolutePath);
         else
             asprintf(&message, "%s couldn't been deleted, %s", absolutePath, strerror(errno));
-        
-        logState(message);
-        free(message);
     }
+    else if (result == -1) {
+        asprintf(&message, "2222222%s couldn't been deleted, %s", absolutePath, strerror(errno));
+    }
+
+    logState(message);
+    free(message);
     free(absolutePath);
 }
 
 void copyAllFiles(char* source, char* dest) {
     DIR* dir = opendir(source);
-    if (dir == NULL) return;
+    if (dir == NULL) {
+        char* message;
+        asprintf(&message, "Files from %s couldn't been copied, %s", source, strerror(errno));
+        logState(message);
+        free(message);
+        return;
+    }
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
@@ -93,14 +108,27 @@ void copyFile(char* sourcePath, char* name, char* destPath) {
     if (result == 0 && S_ISREG(st.st_mode)) {
         size_t fileSize = st.st_size;
 
+        int result;
         if (fileSize > fileSizeThreshold)
-            copyFileByMMapping(sourcePath, name, destPath, fileSize);
+            result = copyFileByMMapping(sourcePath, name, destPath, fileSize);
         else
-            copyFileInStandardWay(sourcePath, name, destPath);
+            result = copyFileInStandardWay(sourcePath, name, destPath);
+
+        if (result == 0) {
+            char* absoluteDestPath = concat(destPath, name);
+            chmod(absoluteDestPath, st.st_mode);
+            chown(absoluteDestPath, st.st_uid, st.st_gid);
+        }
+    }
+    else if (result == -1) {
+        char* message;
+        asprintf(&message, "%s couldn't been copied, %s", absolutePath, strerror(errno));
+        logState(message);
+        free(message);
     }
 }
 
-void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fileSize) {
+int copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fileSize) {
     char* inputPath = concat(sourcePath, name);
     char* message;
     int input = open(inputPath, O_RDONLY);
@@ -110,7 +138,7 @@ void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fil
 
         free(message);
         free(inputPath);
-        return;
+        return 1;
     }
 
     char* outputPath = concat(destPath, name);
@@ -122,7 +150,7 @@ void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fil
         free(message);
         free(inputPath);
         free(outputPath);
-        return;
+        return 1;
     }
 
     char* mmappedData = mmap(NULL, fileSize, PROT_READ, MAP_PRIVATE | MAP_POPULATE, input, 0);
@@ -133,7 +161,7 @@ void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fil
         free(message);
         free(inputPath);
         free(outputPath);
-        return;
+        return 1;
     }
     int result = write(output, mmappedData, fileSize);
 
@@ -153,9 +181,10 @@ void copyFileByMMapping(char* sourcePath, char* name, char* destPath, size_t fil
     close(output);
 
     munmap(mmappedData, fileSize);
+    return result == -1 ? 1 : 0;
 }
 
-void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
+int copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
     char* message;
 
     char* absolutePath = concat(sourcePath, name);
@@ -166,7 +195,7 @@ void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
 
         free(message);
         free(absolutePath);
-        return;
+        return 1;
     }
 
     char* outputAbsolutePath = concat(destPath, name);
@@ -178,7 +207,7 @@ void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
         free(message);
         free(absolutePath);
         free(outputAbsolutePath);
-        return;
+        return 1;
     }
 
     unsigned char buffer[16];
@@ -204,4 +233,5 @@ void copyFileInStandardWay(char* sourcePath, char* name, char* destPath) {
     free(message);
     free(absolutePath);
     free(outputAbsolutePath);
+    return result == -1 ? 1 : 0;
 }

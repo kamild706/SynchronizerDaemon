@@ -46,7 +46,7 @@ myList* listDirsInDirectory(char* dirPath) {
     return list;
 }
 
-int createDirIfNotExists(char* path, char* dirName) {
+int createDirIfNotExists(char* path, char* dirName, char* basePath) {
     char* absolutePath = concat(path, dirName);
 
     DIR* dir = opendir(absolutePath);
@@ -55,10 +55,16 @@ int createDirIfNotExists(char* path, char* dirName) {
         return 0;
     }
 
+    struct stat st;
+    char* sourcePath = concat(basePath, dirName);
+    lstat(sourcePath, &st);
+    free(sourcePath);
+
     char* message;
     if (errno == ENOENT) {
-        int result = mkdir(absolutePath, 0744);
+        int result = mkdir(absolutePath, st.st_mode);
         if (result == 0) {
+            chown(absolutePath, st.st_uid, st.st_gid);
             asprintf(&message, "%s has been created", absolutePath);
             logState(message);
             free(message);
@@ -84,7 +90,13 @@ int createDirIfNotExists(char* path, char* dirName) {
 
 void deleteAllDirs(char* path) {
     DIR* dir = opendir(path);
-    if (dir == NULL) return;
+    if (dir == NULL) {
+        char* message;
+        asprintf(&message, "Directories from %s couldn't been deleted, %s", path, strerror(errno));
+        logState(message);
+        free(message);
+        return;
+    }
 
     struct dirent* entry;
 
@@ -106,7 +118,13 @@ void deleteAllDirs(char* path) {
 
 void deleteDir(char* path) {
     DIR* dir = opendir(path);
-    if (dir == NULL) return;
+    if (dir == NULL)  {
+        char* message;
+        asprintf(&message, "Directory %s couldn't been deleted, %s", path, strerror(errno));
+        logState(message);
+        free(message);
+        return;
+    }
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {

@@ -4,7 +4,7 @@
 #include "myList.h"
 
 myList* listDirsInDirectory(char* dir);
-int createDirIfNotExists(char* path, char* dirName);
+int createDirIfNotExists(char* path, char* dirName, char* basePath);
 void deleteAllDirs(char* path);
 void deleteDir(char* path);
 

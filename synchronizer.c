@@ -66,7 +66,7 @@ int synchronizeDirectories(char* sourcePath, char* destPath) {
         myNode* node2 = getNodeByName(destDirs, node1->name);
 
         char* dirName = appendSlash(node1->name);
-        int result = createDirIfNotExists(destPath, dirName);
+        int result = createDirIfNotExists(destPath, dirName, sourcePath);
 
         if (result == 0) {
             char* newSourcePath = concat(sourcePath, dirName);
