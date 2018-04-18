@@ -68,7 +68,7 @@ int runDaemon() {
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     int option_index = 0;
     int copyRecursively = 0;
     long thresholdValue = 0;
@@ -90,6 +90,12 @@ int main(int argc, char **argv) {
                 break;
             case 'p':
                 pauseTime = atoi(optarg);
+                break;
+            case '?':
+                printf("Error: unknown argument was passed: %c\n", optopt);
+                return 1;
+            default:
+                abort();
         }
     }
 

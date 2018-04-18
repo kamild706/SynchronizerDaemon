@@ -1,4 +1,4 @@
 #include "config.h"
 
-long fileSizeThreshold = 512;
+long fileSizeThreshold = 1024 * 1024;
 int synchronizeRecursively = 0;
