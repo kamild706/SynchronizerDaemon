@@ -123,6 +123,11 @@ int main(int argc, char** argv) {
         sourcePath = appendSlash(sourcePath);
     if (!endsWithSlash(destPath))
         destPath = appendSlash(destPath);
+
+    if (strstr(destPath, sourcePath) != NULL && copyRecursively == 1) {
+        printf("Destination directory exists inside source directory. Recursive synchronization is not allowed.");
+        return 1;
+    }
     
     if (thresholdValue > 0)
         fileSizeThreshold = thresholdValue;

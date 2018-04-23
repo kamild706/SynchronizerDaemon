@@ -108,7 +108,6 @@ void copyFile(char* sourcePath, char* name, char* destPath) {
     if (result == 0 && S_ISREG(st.st_mode)) {
         size_t fileSize = st.st_size;
 
-        int result;
         if (fileSize > fileSizeThreshold)
             result = copyFileByMMapping(sourcePath, name, destPath, fileSize);
         else
