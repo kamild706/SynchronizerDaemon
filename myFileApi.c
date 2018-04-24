@@ -66,16 +66,20 @@ void deleteFile(char* path, char* name) {
     struct stat fileInfo;
     int result = lstat(absolutePath, &fileInfo);
 
-    if (result == 0 && S_ISREG(fileInfo.st_mode)) {
-        result = unlink(absolutePath);
+    if (result == 0) {
+        if (S_ISREG(fileInfo.st_mode)) {
+            result = unlink(absolutePath);
 
-        if (result == 0)
-            asprintf(&message, "%s has been deleted", absolutePath);
-        else
-            asprintf(&message, "%s couldn't been deleted, %s", absolutePath, strerror(errno));
+            if (result == 0) {
+                asprintf(&message, "%s has been deleted", absolutePath);
+            }
+            else {
+                asprintf(&message, "%s couldn't been deleted, %s", absolutePath, strerror(errno));
+            }
+        }
     }
-    else if (result == -1) {
-        asprintf(&message, "2222222%s couldn't been deleted, %s", absolutePath, strerror(errno));
+    else {
+        asprintf(&message, "%s couldn't been deleted, %s", absolutePath, strerror(errno));
     }
 
     logState(message);
